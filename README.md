@@ -65,5 +65,20 @@ BIL372_TuneMatch
 ├── 05_Frontend
 └── 06_Tests
     └── test_queries.sql
+```
 
+---
 
+## Make Sure you have: 
+    -MySQL 8.x installed and running (local localhost:3306 is assumed)
+    -Python 3.10+
+    -DBeaver (or MySQL Workbench)
+
+---
+
+## 1) Clone the repository
+
+## 2) Set Up the Database (MySQL + DBeaver)
+    - Open DBeaver
+    - Run: 
+    02_Database/01_Schema/create_database.sql
