@@ -82,8 +82,8 @@ BIL372_TuneMatch
 
 First, clone the project to your local machine:
 
-```bash
-git clone [https://github.com/](https://github.com/)<kaannarslan>/TuneMatch.git
+```bash 
+git clone [https://github.com/](https://github.com/)kaannarslan/TuneMatch.git
 cd BIL372_TuneMatch
 ```
 ### 2. Install Python Dependencies
@@ -91,4 +91,54 @@ cd BIL372_TuneMatch
 cd 03_Scripts/data_generation
 pip install -r requirements.txt
 ```
+---
+
+## Database Configuration
+
+### Set up MySQL and DBeaver
+1. Run content of 02_Database/01_Schema/create_database.sql
+2. -- Run content of: create_tables.sql
+3. -- Run content of: create_indexes.sql
+
+### Verify Tables
+You should see the following tables:
+```text
+-Kullanici
+-Artist, Album, Song, Genre, Artist_Genre
+-Listening_History
+-User_Favorite_Artist, User_Liked_Genre
+-Match_Table, Follow
+```
+
+---
+
+## Environment Variables
+⚠️ Important: The .env file is NOT included in the repository for security reasons. You must create it manually.
+
+1. Navigate to: 03_Scripts/data_generation/
+2. Create a file named .env.
+3. Add the following content (ask the repo owner for shared test credentials if needed):
+   ```bash
+   # Spotify API
+    SPOTIFY_CLIENT_ID=your_client_id
+    SPOTIFY_CLIENT_SECRET=your_client_secret
     
+    # Database
+    DB_HOST=localhost
+    DB_USER=root
+    DB_PASSWORD=your_mysql_password
+    DB_NAME=tunematch
+    ```
+## Usage
+Run the fetcher script to populate your database with real artist data. The script handles authentication and updates tables (Artist, Genre, Album, Song, etc.).
+```bash
+python spotify_fetcher.py "<artist_name>"
+
+example: python spotify_fetcher.py "Megadeth"
+```
+
+## Security Notes
+🔴 DO NOT COMMIT the .env file.
+
+🔴 DO NOT COMMIT client secrets or MySQL passwords.
+
