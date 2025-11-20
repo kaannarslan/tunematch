@@ -76,9 +76,19 @@ BIL372_TuneMatch
 
 ---
 
-## 1) Clone the repository
+## 🛠 Setup & Installation
 
-## 2) Set Up the Database (MySQL + DBeaver)
-    - Open DBeaver
-    - Run: 
-    02_Database/01_Schema/create_database.sql
+### 1. Clone the Repository
+
+First, clone the project to your local machine:
+
+```bash
+git clone [https://github.com/](https://github.com/)<kaannarslan>/TuneMatch.git
+cd BIL372_TuneMatch
+```
+### 2. Install Python Dependencies
+```bash
+cd 03_Scripts/data_generation
+pip install -r requirements.txt
+```
+    
