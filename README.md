@@ -1,0 +1,144 @@
+# TuneMatch 🎵
+
+TuneMatch is a music-based matching platform built as a database course project.  
+It combines **Spotify data** (artists, albums, tracks, genres) with a **relational schema** and basic **social/matching features** (follows, matches, listening history, preferences).
+
+This repo contains:
+
+- Full **database schema** (`MySQL + InnoDB`)
+- **Data generation** scripts using the **Spotify Web API**
+- Project structure placeholders for **backend** and **frontend**
+- Example SQL queries and test utilities
+
+---
+
+## 🧱 Tech Stack
+
+- **Database:** MySQL 8.x (InnoDB, utf8mb4)
+- **DB Client:** DBeaver (recommended)
+- **Backend scripts:** Python 3.10+ (for now: data generation)
+- **External API:** Spotify Web API (Client Credentials Flow)
+
+---
+
+## 📁 Project Structure
+
+```text
+BIL372_TuneMatch
+├── 01_Documentation
+│   ├── Ara_Rapor.pdf
+│   └── Son_Rapor.pdf
+│
+├── 02_Database
+│   ├── 01_Schema
+│   │   ├── create_database.sql
+│   │   ├── create_tables.sql
+│   │   └── create_indexes.sql
+│   │
+│   ├── 02_Data
+│   │   ├── CSV
+│   │   │   ├── genres.csv
+│   │   │   ├── artists.csv
+│   │   │   ├── songs.csv
+│   │   │   └── users.csv
+│   │   └── load_data.sql
+│   │
+│   ├── 03_Queries
+│   │   ├── 01_basic_queries.sql
+│   │   ├── 02_match_algorithm.sql
+│   │   ├── 03_statistics.sql
+│   │   └── 04_test_queries.sql
+│   │
+│   └── 04_DBeaver_Projects
+│       └── tunematch.dbeaver
+│
+├── 03_Scripts
+│   ├── data_generation
+│   │   ├── spotify_fetcher.py
+│   │   ├── requirements.txt
+│   │   └── (local) .env  ← NOT committed, used for secrets
+│   │
+│   └── data_loading
+│       └── load_csv_to_db.py
+│
+├── 04_Backend
+├── 05_Frontend
+└── 06_Tests
+    └── test_queries.sql
+```
+
+---
+
+## Make Sure you have: 
+    -MySQL 8.x installed and running (local localhost:3306 is assumed)
+    -Python 3.10+
+    -DBeaver (or MySQL Workbench)
+
+---
+
+## 🛠 Setup & Installation
+
+### 1. Clone the Repository
+
+First, clone the project to your local machine:
+
+```bash 
+git clone [https://github.com/](https://github.com/)kaannarslan/TuneMatch.git
+cd BIL372_TuneMatch
+```
+### 2. Install Python Dependencies
+```bash
+cd 03_Scripts/data_generation
+pip install -r requirements.txt
+```
+---
+
+## Database Configuration
+
+### Set up MySQL and DBeaver
+1. Run content of 02_Database/01_Schema/create_database.sql
+2. -- Run content of: create_tables.sql
+3. -- Run content of: create_indexes.sql
+
+### Verify Tables
+You should see the following tables:
+```text
+-Kullanici
+-Artist, Album, Song, Genre, Artist_Genre
+-Listening_History
+-User_Favorite_Artist, User_Liked_Genre
+-Match_Table, Follow
+```
+
+---
+
+## Environment Variables
+⚠️ Important: The .env file is NOT included in the repository for security reasons. You must create it manually.
+
+1. Navigate to: 03_Scripts/data_generation/
+2. Create a file named .env.
+3. Add the following content (ask the repo owner for shared test credentials if needed):
+   ```bash
+   # Spotify API
+    SPOTIFY_CLIENT_ID=your_client_id
+    SPOTIFY_CLIENT_SECRET=your_client_secret
+    
+    # Database
+    DB_HOST=localhost
+    DB_USER=root
+    DB_PASSWORD=your_mysql_password
+    DB_NAME=tunematch
+    ```
+## Usage
+Run the fetcher script to populate your database with real artist data. The script handles authentication and updates tables (Artist, Genre, Album, Song, etc.).
+```bash
+python spotify_fetcher.py "<artist_name>"
+
+example: python spotify_fetcher.py "Megadeth"
+```
+
+## Security Notes
+🔴 DO NOT COMMIT the .env file.
+
+🔴 DO NOT COMMIT client secrets or MySQL passwords.
+
