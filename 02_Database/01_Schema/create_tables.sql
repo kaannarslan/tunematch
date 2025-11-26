@@ -36,8 +36,6 @@ create table Artist(
 	check (popularity_score between 0 and 100)
 )ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
-CREATE INDEX idx_artist_name ON Artist(name);
-
 -- ============================================
 -- 4. ALBUM
 -- ============================================
@@ -73,9 +71,6 @@ CREATE TABLE Song (
         REFERENCES Album(album_id)
         ON DELETE SET NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
-
-CREATE INDEX idx_song_title  ON Song(title);
-CREATE INDEX idx_song_artist ON Song(artist_id);
 
 -- ============================================
 -- 6. ARTIST_GENRE  (many-to-many)
@@ -114,9 +109,6 @@ CREATE TABLE Listening_History (
         REFERENCES Song(song_id)
         ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
-
-CREATE INDEX idx_lh_user  ON Listening_History(user_id);
-CREATE INDEX idx_lh_date  ON Listening_History(last_played);
 
 -- ============================================
 -- 8. USER_FAVORITE_ARTIST
@@ -180,8 +172,6 @@ CREATE TABLE Match_Table (
     CHECK (compatibility_score BETWEEN 0 AND 100),
     CONSTRAINT uq_match_pair UNIQUE (user1_id, user2_id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
-
-CREATE INDEX idx_match_score ON Match_Table(compatibility_score);
 
 -- ============================================
 -- 11. FOLLOW
