@@ -24,7 +24,7 @@ def register():
         email=data.get('email'),
         password_hash=data.get('password'),  # Not: Prodüksiyonda hashlenmeli
         birth_date=data.get('birth_date'),  # 'YYYY-MM-DD' formatında gelmeli
-        sex=data.get('sex'),
+        sex=data.get('F'),
         city=data.get('city')
     )
 
@@ -145,4 +145,4 @@ def get_matches(user_id):
 if __name__ == '__main__':
     # host='0.0.0.0' tüm ağa açar (Telefondan erişim için şart)
     # debug=True geliştirme modunu açar (Hata görünce konsola yazar)
-    app.run(debug=True, host='0.0.0.0', port=5000)
+    app.run(debug=True, host='0.0.0.0', port=8000)

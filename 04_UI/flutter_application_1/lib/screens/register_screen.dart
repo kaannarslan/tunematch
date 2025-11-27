@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../services/api_service.dart';
 import 'match_screen.dart';
 
 class RegisterScreen extends StatefulWidget {
@@ -11,19 +12,22 @@ class RegisterScreen extends StatefulWidget {
 class _RegisterScreenState extends State<RegisterScreen> {
   final _formKey = GlobalKey<FormState>();
 
+  // Controllerlar
   final _firstNameController = TextEditingController();
   final _lastNameController = TextEditingController();
-  final _ageController = TextEditingController();
+  final _emailController = TextEditingController(); // Eklendi
+  final _passwordController = TextEditingController(); // Eklendi
+  final _birthDateController = TextEditingController();
   final _cityController = TextEditingController();
 
+  // Seçimler
   String? _selectedGender;
   final List<String> _genders = ['Kadın', 'Erkek', 'Belirtmek İstemiyorum'];
-
-  // --- SEÇİLENLERİ TUTACAK LİSTELER ---
   List<String> _selectedGenres = [];
   List<String> _selectedArtists = [];
+  bool _isLoading = false;
 
-  // --- ÖRNEK VERİ HAVUZU (Gerçekte API'den gelebilir) ---
+  // Veri Havuzları
   final List<String> _allGenres = [
     'Rock',
     'Pop',
@@ -36,7 +40,6 @@ class _RegisterScreenState extends State<RegisterScreen> {
     'R&B',
     'Arabesk'
   ];
-
   final List<String> _allArtists = [
     'The Weeknd',
     'Arctic Monkeys',
@@ -45,21 +48,40 @@ class _RegisterScreenState extends State<RegisterScreen> {
     'Taylor Swift',
     'Duman',
     'Ezhel',
-    'Metallica',
-    'Tarkan',
-    'Daft Punk'
+    'Metallica'
   ];
 
-  // --- ÇOKLU SEÇİM PENCERESİ FONKSİYONU ---
+  // --- TARİH SEÇİCİ (Manuel Formatlama ile) ---
+  Future<void> _selectDate(BuildContext context) async {
+    final DateTime? picked = await showDialog(
+      context: context,
+      builder: (context) {
+        return DatePickerDialog(
+          initialDate: DateTime(2000),
+          firstDate: DateTime(1950),
+          lastDate: DateTime.now(),
+        );
+      },
+    );
+
+    if (picked != null) {
+      // YYYY-MM-DD Formatı (intl paketi olmadan)
+      String formattedDate =
+          "${picked.year}-${picked.month.toString().padLeft(2, '0')}-${picked.day.toString().padLeft(2, '0')}";
+      setState(() {
+        _birthDateController.text = formattedDate;
+      });
+    }
+  }
+
+  // --- ÇOKLU SEÇİM PENCERESİ ---
   void _showMultiSelectDialog(String title, List<String> items,
       List<String> selectedItems, Function(List<String>) onConfirm) async {
-    final List<String> tempSelected = List.from(selectedItems); // Geçici liste
-
+    final List<String> tempSelected = List.from(selectedItems);
     await showDialog(
       context: context,
       builder: (BuildContext context) {
         return StatefulBuilder(
-          // Dialog içinde state değişimi için gerekli
           builder: (context, setState) {
             return AlertDialog(
               title: Text("$title Seç"),
@@ -77,11 +99,10 @@ class _RegisterScreenState extends State<RegisterScreen> {
                       activeColor: Colors.deepPurple,
                       onChanged: (bool? value) {
                         setState(() {
-                          if (value == true) {
+                          if (value == true)
                             tempSelected.add(item);
-                          } else {
+                          else
                             tempSelected.remove(item);
-                          }
                         });
                       },
                     );
@@ -90,16 +111,14 @@ class _RegisterScreenState extends State<RegisterScreen> {
               ),
               actions: [
                 TextButton(
-                  child: const Text("İptal"),
-                  onPressed: () => Navigator.pop(context),
-                ),
+                    child: const Text("İptal"),
+                    onPressed: () => Navigator.pop(context)),
                 ElevatedButton(
-                  child: const Text("Kaydet"),
-                  onPressed: () {
-                    onConfirm(tempSelected); // Seçimleri ana ekrana gönder
-                    Navigator.pop(context);
-                  },
-                ),
+                    child: const Text("Kaydet"),
+                    onPressed: () {
+                      onConfirm(tempSelected);
+                      Navigator.pop(context);
+                    }),
               ],
             );
           },
@@ -108,22 +127,42 @@ class _RegisterScreenState extends State<RegisterScreen> {
     );
   }
 
-  void _register() {
+  void _register() async {
     if (_formKey.currentState!.validate()) {
       if (_selectedGenres.isEmpty || _selectedArtists.isEmpty) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-              content: Text("Lütfen en az bir müzik türü ve sanatçı seçin.")),
-        );
+            const SnackBar(content: Text("Lütfen müzik zevkinizi seçin.")));
         return;
       }
 
-      // Kayıt başarılı
-      Navigator.pushAndRemoveUntil(
-        context,
-        MaterialPageRoute(builder: (context) => const MatchScreen()),
-        (route) => false,
-      );
+      setState(() => _isLoading = true);
+
+      final userData = {
+        "name": _firstNameController.text,
+        "surname": _lastNameController.text,
+        "email": _emailController.text,
+        "password": _passwordController.text,
+        "birth_date": _birthDateController.text, // YYYY-MM-DD
+        "sex": _selectedGender,
+        "city": _cityController.text,
+        // Not: Genre ve Artist backend'e şu an gönderilmiyor, backend güncellenince buraya eklenecek
+      };
+
+      final result = await ApiService.register(userData);
+
+      setState(() => _isLoading = false);
+
+      if (result['success']) {
+        ScaffoldMessenger.of(context)
+            .showSnackBar(const SnackBar(content: Text("Kayıt Başarılı!")));
+        Navigator.pushAndRemoveUntil(
+            context,
+            MaterialPageRoute(builder: (context) => const MatchScreen()),
+            (route) => false);
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+            content: Text(result['message']), backgroundColor: Colors.red));
+      }
     }
   }
 
@@ -144,7 +183,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                         TextStyle(fontSize: 28, fontWeight: FontWeight.bold)),
                 const SizedBox(height: 20),
 
-                // Ad - Soyad
+                // AD - SOYAD
                 Row(
                   children: [
                     Expanded(
@@ -165,53 +204,81 @@ class _RegisterScreenState extends State<RegisterScreen> {
                 ),
                 const SizedBox(height: 16),
 
-                // Yaş - Şehir
+                // EMAIL - ŞİFRE
+                TextFormField(
+                    controller: _emailController,
+                    decoration: const InputDecoration(
+                        labelText: "E-posta",
+                        prefixIcon: Icon(Icons.email),
+                        border: OutlineInputBorder()),
+                    validator: (v) => v!.isEmpty ? "Zorunlu" : null),
+                const SizedBox(height: 16),
+                TextFormField(
+                    controller: _passwordController,
+                    obscureText: true,
+                    decoration: const InputDecoration(
+                        labelText: "Şifre",
+                        prefixIcon: Icon(Icons.lock),
+                        border: OutlineInputBorder()),
+                    validator: (v) =>
+                        v!.length < 6 ? "En az 6 karakter" : null),
+                const SizedBox(height: 16),
+
+                // TARİH - ŞEHİR
                 Row(
                   children: [
                     Expanded(
+                        flex: 4,
                         child: TextFormField(
-                            controller: _ageController,
-                            keyboardType: TextInputType.number,
+                            controller: _birthDateController,
+                            readOnly: true,
+                            onTap: () => _selectDate(context),
                             decoration: const InputDecoration(
-                                labelText: "Yaş", border: OutlineInputBorder()),
+                                labelText: "Doğum Tarihi",
+                                prefixIcon: Icon(Icons.calendar_month),
+                                border: OutlineInputBorder()),
                             validator: (v) => v!.isEmpty ? "Zorunlu" : null)),
                     const SizedBox(width: 16),
                     Expanded(
-                        flex: 2,
+                        flex: 3,
                         child: TextFormField(
                             controller: _cityController,
                             decoration: const InputDecoration(
                                 labelText: "Şehir",
+                                prefixIcon: Icon(Icons.location_city),
                                 border: OutlineInputBorder()),
                             validator: (v) => v!.isEmpty ? "Zorunlu" : null)),
                   ],
                 ),
                 const SizedBox(height: 16),
 
-                // Cinsiyet
+                // CİNSİYET
                 DropdownButtonFormField<String>(
                   value: _selectedGender,
                   decoration: const InputDecoration(
-                      labelText: "Cinsiyet", border: OutlineInputBorder()),
+                      labelText: "Cinsiyet",
+                      prefixIcon: Icon(Icons.wc),
+                      border: OutlineInputBorder()),
                   items: _genders
                       .map((g) => DropdownMenuItem(value: g, child: Text(g)))
                       .toList(),
                   onChanged: (v) => setState(() => _selectedGender = v),
+                  validator: (v) => v == null ? "Seçiniz" : null,
                 ),
-                const SizedBox(height: 24),
 
-                const Divider(),
+                const Divider(height: 40),
                 const Text("Müzik Zevkin",
                     style:
                         TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
                 const SizedBox(height: 12),
 
-                // --- MÜZİK TÜRÜ SEÇİM ALANI ---
+                // TÜR SEÇİMİ
                 InkWell(
                   onTap: () => _showMultiSelectDialog(
-                      "Müzik Türü", _allGenres, _selectedGenres, (list) {
-                    setState(() => _selectedGenres = list);
-                  }),
+                      "Müzik Türü",
+                      _allGenres,
+                      _selectedGenres,
+                      (list) => setState(() => _selectedGenres = list)),
                   child: Container(
                     padding: const EdgeInsets.symmetric(
                         horizontal: 12, vertical: 16),
@@ -222,14 +289,11 @@ class _RegisterScreenState extends State<RegisterScreen> {
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
                         Expanded(
-                          child: _selectedGenres.isEmpty
-                              ? const Text("Müzik türlerini seç...",
-                                  style: TextStyle(color: Colors.black54))
-                              : Text(_selectedGenres.join(", "),
-                                  style: const TextStyle(
-                                      fontWeight: FontWeight.bold),
-                                  overflow: TextOverflow.ellipsis),
-                        ),
+                            child: Text(
+                                _selectedGenres.isEmpty
+                                    ? "Türleri seç..."
+                                    : _selectedGenres.join(", "),
+                                overflow: TextOverflow.ellipsis)),
                         const Icon(Icons.arrow_drop_down),
                       ],
                     ),
@@ -237,12 +301,13 @@ class _RegisterScreenState extends State<RegisterScreen> {
                 ),
                 const SizedBox(height: 16),
 
-                // --- SANATÇI SEÇİM ALANI ---
+                // SANATÇI SEÇİMİ
                 InkWell(
                   onTap: () => _showMultiSelectDialog(
-                      "Sanatçı", _allArtists, _selectedArtists, (list) {
-                    setState(() => _selectedArtists = list);
-                  }),
+                      "Sanatçı",
+                      _allArtists,
+                      _selectedArtists,
+                      (list) => setState(() => _selectedArtists = list)),
                   child: Container(
                     padding: const EdgeInsets.symmetric(
                         horizontal: 12, vertical: 16),
@@ -253,14 +318,11 @@ class _RegisterScreenState extends State<RegisterScreen> {
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
                         Expanded(
-                          child: _selectedArtists.isEmpty
-                              ? const Text("Favori sanatçılarını seç...",
-                                  style: TextStyle(color: Colors.black54))
-                              : Text(_selectedArtists.join(", "),
-                                  style: const TextStyle(
-                                      fontWeight: FontWeight.bold),
-                                  overflow: TextOverflow.ellipsis),
-                        ),
+                            child: Text(
+                                _selectedArtists.isEmpty
+                                    ? "Sanatçıları seç..."
+                                    : _selectedArtists.join(", "),
+                                overflow: TextOverflow.ellipsis)),
                         const Icon(Icons.mic_external_on),
                       ],
                     ),
@@ -269,13 +331,14 @@ class _RegisterScreenState extends State<RegisterScreen> {
 
                 const SizedBox(height: 30),
                 ElevatedButton(
-                  onPressed: _register,
+                  onPressed: _isLoading ? null : _register,
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.deepPurple,
-                    padding: const EdgeInsets.symmetric(vertical: 16),
-                  ),
-                  child: const Text("Kayıt Ol",
-                      style: TextStyle(fontSize: 18, color: Colors.white)),
+                      backgroundColor: Colors.deepPurple,
+                      padding: const EdgeInsets.symmetric(vertical: 16)),
+                  child: _isLoading
+                      ? const CircularProgressIndicator(color: Colors.white)
+                      : const Text("Kayıt Ol",
+                          style: TextStyle(fontSize: 18, color: Colors.white)),
                 ),
               ],
             ),

@@ -14,30 +14,15 @@ class _MatchScreenState extends State<MatchScreen> {
   final CardSwiperController controller = CardSwiperController();
 
   bool _onSwipe(
-    int previousIndex,
-    int? currentIndex,
-    CardSwiperDirection direction,
-  ) {
-    // Kaydırılan kullanıcıyı listeden alıyoruz
+      int previousIndex, int? currentIndex, CardSwiperDirection direction) {
     final swipedUser = mockUsers[previousIndex];
-
     if (direction == CardSwiperDirection.right) {
-      // SAĞA KAYDIRMA (BEĞENİ)
-      // DİKKAT: Burada artık swipedUser.name yerine swipedUser.firstName kullanıyoruz.
-      debugPrint('${swipedUser.firstName} ${swipedUser.lastName} beğenildi!');
-
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          // Kullanıcıya sadece ismiyle hitap ediyoruz
-          content: Text(
-              '${swipedUser.firstName} ile müzik zevkiniz eşleşiyor olabilir! 🎵'),
-          duration: const Duration(milliseconds: 500),
-          backgroundColor: Colors.green, // Beğeni olduğu için yeşil renk
-        ),
+            content: Text('${swipedUser.firstName} beğenildi! 🎵'),
+            backgroundColor: Colors.green,
+            duration: const Duration(milliseconds: 500)),
       );
-    } else if (direction == CardSwiperDirection.left) {
-      // SOLA KAYDIRMA (PAS)
-      debugPrint('${swipedUser.firstName} geçildi.');
     }
     return true;
   }
@@ -46,27 +31,15 @@ class _MatchScreenState extends State<MatchScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text("Müzik Eşleşmesi",
-            style: TextStyle(fontWeight: FontWeight.bold)),
-        centerTitle: true,
-        // İsterseniz buraya bir de filtre ikonu ekleyebiliriz ileride
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.filter_list),
-            onPressed: () {
-              // Filtreleme ekranı buraya gelecek
-              ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(content: Text("Filtreleme yakında...")));
-            },
-          )
-        ],
-      ),
+          title: const Text("Müzik Eşleşmesi",
+              style: TextStyle(fontWeight: FontWeight.bold)),
+          centerTitle: true),
       body: SafeArea(
         child: Column(
           children: [
             Expanded(
               child: mockUsers.isEmpty
-                  ? const Center(child: Text("Görüntülenecek kimse kalmadı."))
+                  ? const Center(child: Text("Kimse kalmadı."))
                   : CardSwiper(
                       controller: controller,
                       cardsCount: mockUsers.length,
@@ -74,37 +47,27 @@ class _MatchScreenState extends State<MatchScreen> {
                       numberOfCardsDisplayed: 3,
                       backCardOffset: const Offset(0, 40),
                       padding: const EdgeInsets.all(24.0),
-                      cardBuilder: (context,
-                          index,
-                          horizontalThresholdPercentage,
-                          verticalThresholdPercentage) {
-                        return ProfileCard(user: mockUsers[index]);
-                      },
+                      cardBuilder: (context, index, h, v) =>
+                          ProfileCard(user: mockUsers[index]),
                     ),
             ),
-
-            // Alt Butonlar
             Padding(
               padding: const EdgeInsets.symmetric(vertical: 20.0),
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                 children: [
                   FloatingActionButton(
-                    heroTag: "pass",
-                    onPressed: () => controller.swipe(CardSwiperDirection.left),
-                    backgroundColor: Colors.red[100],
-                    elevation: 0,
-                    child: const Icon(Icons.close, color: Colors.red, size: 30),
-                  ),
+                      heroTag: "pass",
+                      onPressed: () =>
+                          controller.swipe(CardSwiperDirection.left),
+                      backgroundColor: Colors.red[100],
+                      child: const Icon(Icons.close, color: Colors.red)),
                   FloatingActionButton(
-                    heroTag: "like",
-                    onPressed: () =>
-                        controller.swipe(CardSwiperDirection.right),
-                    backgroundColor: Colors.green[100],
-                    elevation: 0,
-                    child: const Icon(Icons.favorite,
-                        color: Colors.green, size: 30),
-                  ),
+                      heroTag: "like",
+                      onPressed: () =>
+                          controller.swipe(CardSwiperDirection.right),
+                      backgroundColor: Colors.green[100],
+                      child: const Icon(Icons.favorite, color: Colors.green)),
                 ],
               ),
             ),
