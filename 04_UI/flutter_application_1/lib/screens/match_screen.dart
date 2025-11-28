@@ -3,6 +3,7 @@ import 'package:flutter_card_swiper/flutter_card_swiper.dart';
 import '../models/user_profile.dart';
 import '../services/api_service.dart';
 import '../widgets/profile_card.dart';
+import 'login_screen.dart'; // <-- BUNU EKLE
 
 class MatchScreen extends StatefulWidget {
   // Giriş yapan kullanıcının ID'sine ihtiyacımız var
@@ -52,6 +53,25 @@ class _MatchScreenState extends State<MatchScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
+        // --- YENİ EKLENEN KISIM: GERİ DÖN TUŞU ---
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back_ios_new,
+              color: Colors.deepPurple), // Geri oku ikonu
+          onPressed: () {
+            // Çıkış onayı sormak istersen buraya Dialog ekleyebiliriz.
+            // Şimdilik direkt çıkış yapıyoruz:
+
+            Navigator.pushAndRemoveUntil(
+              context,
+              MaterialPageRoute(builder: (context) => const LoginScreen()),
+              (route) =>
+                  false, // Geriye dönük tüm sayfaları sil (Stack'i temizle)
+            );
+          },
+          tooltip: "Çıkış Yap", // Uzun basınca çıkan yazı
+        ),
+        // ------------------------------------------
+
         title: const Text("Müzik Eşleşmesi",
             style: TextStyle(fontWeight: FontWeight.bold)),
         centerTitle: true,
@@ -89,10 +109,15 @@ class _MatchScreenState extends State<MatchScreen> {
                   child: CardSwiper(
                     controller: controller,
                     cardsCount: users.length,
-                    // onSwipe fonksiyonuna users listesini de gönderiyoruz
                     onSwipe: (prev, curr, dir) =>
                         _onSwipe(prev, curr, dir, users),
-                    numberOfCardsDisplayed: 3,
+
+                    // --- HATAYI ÇÖZEN KISIM ---
+                    // Eğer kullanıcı sayısı 3'ten azsa, kullanıcı sayısı kadar göster.
+                    // Eğer 3 veya fazlaysa, 3 tane göster.
+                    numberOfCardsDisplayed: users.length < 3 ? users.length : 3,
+                    // ---------------------------
+
                     backCardOffset: const Offset(0, 40),
                     padding: const EdgeInsets.all(24.0),
                     cardBuilder: (context, index, h, v) {

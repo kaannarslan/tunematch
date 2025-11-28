@@ -8,30 +8,37 @@ app = Flask(__name__)
 # 1. KULLANICI İŞLEMLERİ (AUTH & PROFILE)
 # ==========================================
 
+# app.py içindeki register fonksiyonu:
+
+# app.py içindeki register fonksiyonunu bununla değiştir:
+
 @app.route('/api/register', methods=['POST'])
 def register():
-    """Yeni kullanıcı kaydı."""
     data = request.json
-
-    # Zorunlu alan kontrolü
-    required_fields = ['name', 'surname', 'email', 'password']
-    if not all(field in data for field in required_fields):
-        return jsonify({"status": "error", "message": "Eksik bilgi"}), 400
-
-    success = db.add_user(
+    
+    # 1. db_manager artık iki değer döndürüyor: ID ve Hata Mesajı
+    new_user_id, error_message = db.add_user(
         name=data.get('name'),
         surname=data.get('surname'),
         email=data.get('email'),
-        password_hash=data.get('password'),  # Not: Prodüksiyonda hashlenmeli
-        birth_date=data.get('birth_date'),  # 'YYYY-MM-DD' formatında gelmeli
+        password_hash=data.get('password'),
+        birth_date=data.get('birth_date'),
         sex=data.get('F'),
         city=data.get('city')
     )
 
-    if success:
+    if new_user_id:
+        # Başarılı ise favorileri ekle
+        genres = data.get('genres', [])
+        artists = data.get('artists', [])
+
+        if genres: db.add_user_genres(new_user_id, genres)
+        if artists: db.add_user_artists(new_user_id, artists)
+
         return jsonify({"status": "success", "message": "Kayıt başarılı"}), 201
     else:
-        return jsonify({"status": "error", "message": "Kayıt başarısız (Email kullanılıyor olabilir)"}), 400
+        # HATA VARSA: Gerçek hatayı Flutter'a gönder
+        return jsonify({"status": "error", "message": f"Hata Detayı: {error_message}"}), 400
 
 
 @app.route('/api/login', methods=['POST'])

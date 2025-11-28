@@ -28,25 +28,30 @@ class UserProfile {
   });
 
   // --- API'DEN GELEN JSON'I ÇEVİREN METOD ---
+  // user_profile.dart içindeki fromJson metodunu güncelle:
+
   factory UserProfile.fromJson(Map<String, dynamic> json) {
     return UserProfile(
       id: json['user_id'].toString(),
       firstName: json['name'] ?? '',
       lastName: json['surname'] ?? '',
-      // Backend SQL sorgusunda birth_date yoksa varsayılan tarih atıyoruz:
       birthDate: json['birth_date'] ?? '2000-01-01',
       city: json['city'] ?? 'Bilinmiyor',
-      // Backend SQL sorgusunda sex yoksa varsayılan atıyoruz:
       gender: json['sex'] ?? 'Belirtilmemiş',
       bio: json['biography'] ?? '',
-      compatibilityScore: json['compatibility_score'] ?? 0,
 
-      // Şimdilik Backend bu listeleri göndermediği için boş geçiyoruz
-      // İleride bunları da API'ye eklersen burayı güncelleriz.
-      favoriteGenres: [],
-      favoriteArtists: [],
+      // Skoru al (Backend int döndürüyor ama bazen string gelebilir, garantiye alalım)
+      compatibilityScore:
+          int.tryParse(json['compatibility_score'].toString()) ?? 0,
 
-      // Her karta rastgele hafif bir renk verelim ki güzel dursun
+      // --- BURAYI GÜNCELLE: Listeleri JSON'dan al ---
+      favoriteGenres:
+          json['genres'] != null ? List<String>.from(json['genres']) : [],
+
+      favoriteArtists:
+          json['artists'] != null ? List<String>.from(json['artists']) : [],
+
+      // Renk ataması (Aynı kalsın)
       cardColor:
           Colors.primaries[json['user_id'] % Colors.primaries.length].shade100,
     );

@@ -137,15 +137,19 @@ class _RegisterScreenState extends State<RegisterScreen> {
 
       setState(() => _isLoading = true);
 
+      // register_screen.dart içinde _register fonksiyonu:
+
       final userData = {
         "name": _firstNameController.text,
         "surname": _lastNameController.text,
         "email": _emailController.text,
         "password": _passwordController.text,
-        "birth_date": _birthDateController.text, // YYYY-MM-DD
+        "birth_date": _birthDateController.text,
         "sex": _selectedGender,
         "city": _cityController.text,
-        // Not: Genre ve Artist backend'e şu an gönderilmiyor, backend güncellenince buraya eklenecek
+        // --- YENİ EKLENEN KISIM ---
+        "genres": _selectedGenres, // Örn: ["Rock", "Jazz"]
+        "artists": _selectedArtists, // Örn: ["Tarkan", "Metallica"]
       };
 
       final result = await ApiService.register(userData);
