@@ -29,12 +29,14 @@ class _LoginScreenState extends State<LoginScreen> {
       setState(() => _isLoading = false);
 
       if (result['success']) {
-        // Giriş Başarılı
-        debugPrint("Giriş yapan kullanıcı verisi: ${result['data']}");
+        final userData = result['data'];
+        final int userId = userData['user_id']; // ID'yi al
 
         Navigator.pushReplacement(
           context,
-          MaterialPageRoute(builder: (context) => const MatchScreen()),
+          // ID'yi gönder
+          MaterialPageRoute(
+              builder: (context) => MatchScreen(currentUserId: userId)),
         );
       } else {
         // Hata Mesajı
