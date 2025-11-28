@@ -144,6 +144,29 @@ def get_matches(user_id):
         return jsonify({"status": "success", "data": matches}), 200
     else:
         return jsonify({"status": "success", "data": [], "message": "Henüz eşleşme yok"}), 200
+    
+@app.route('/api/follow', methods=['POST'])
+def follow_user():
+    data = request.json
+    follower_id = data.get('follower_id')
+    following_id = data.get('following_id') # ARTIK 'following_id' BEKLİYORUZ
+
+    if not follower_id or not following_id:
+        return jsonify({"status": "error", "message": "Eksik ID"}), 400
+
+    if db.add_follow(follower_id, following_id):
+        return jsonify({"status": "success", "message": "Takip edildi"}), 200
+    else:
+        return jsonify({"status": "error", "message": "İşlem başarısız"}), 500
+    
+# app.py dosyasına ekle:
+
+@app.route('/api/following/<int:user_id>', methods=['GET'])
+def get_following_list(user_id):
+    """Takip edilenleri listeler."""
+    users = db.get_followed_users(user_id)
+    # Her zaman success dönüyoruz, liste boş olsa bile
+    return jsonify({"status": "success", "data": users}), 200
 
 
 # ==========================================

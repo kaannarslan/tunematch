@@ -88,4 +88,48 @@ class ApiService {
       return [];
     }
   }
+
+  // --- TAKİP ETME (SAĞA KAYDIRMA) ---
+  static Future<bool> followUser(int followerId, int followingId) async {
+    final url = Uri.parse('$baseUrl/follow');
+    try {
+      final response = await http.post(
+        url,
+        headers: {"Content-Type": "application/json"},
+        body: jsonEncode({
+          "follower_id": followerId,
+          "following_id":
+              followingId, // BURASI GÜNCELLENDİ (followed_id -> following_id)
+        }),
+      );
+
+      return response.statusCode == 200;
+    } catch (e) {
+      print("Follow hatası: $e");
+      return false;
+    }
+  }
+
+  // api_service.dart içine ekle:
+
+  // --- TAKİP EDİLENLERİ GETİR ---
+  static Future<List<UserProfile>> getFollowingList(int userId) async {
+    final url = Uri.parse('$baseUrl/following/$userId');
+
+    try {
+      final response = await http.get(url);
+
+      if (response.statusCode == 200) {
+        final Map<String, dynamic> decoded = jsonDecode(response.body);
+        if (decoded['status'] == 'success') {
+          final List<dynamic> data = decoded['data'];
+          return data.map((json) => UserProfile.fromJson(json)).toList();
+        }
+      }
+      return [];
+    } catch (e) {
+      print("Takip listesi hatası: $e");
+      return [];
+    }
+  }
 }

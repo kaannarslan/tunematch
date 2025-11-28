@@ -342,3 +342,63 @@ def log_song_listen(user_id, song_id):
     finally:
         cursor.close()
         conn.close()
+        
+def add_follow(follower_id, following_id):
+    """Kullanıcının birini beğendiğini kaydeder."""
+    conn = get_db_connection()
+    if not conn: return False
+    cursor = conn.cursor()
+
+    try:
+        # GÜNCELLEME: Sütun isimleri senin tablonla eşleşti (following_id)
+        # INSERT IGNORE: Çift kayıt hatasını önler.
+        # NOW(): O anki tarihi ve saati 'followed_at' sütununa basar.
+        query = """
+            INSERT IGNORE INTO Follow (follower_id, following_id, followed_at) 
+            VALUES (%s, %s, NOW())
+        """
+        cursor.execute(query, (follower_id, following_id))
+        conn.commit()
+        return True
+    except mysql.connector.Error as err:
+        print(f"Follow Ekleme Hatası: {err}")
+        return False
+    finally:
+        cursor.close()
+        conn.close()
+
+def get_followed_users(user_id):
+    """Kullanıcının takip ettiği (beğendiği) kişilerin listesini getirir."""
+    conn = get_db_connection()
+    if not conn: return []
+    cursor = conn.cursor(dictionary=True)
+
+    try:
+        # Follow tablosundaki following_id'yi Kullanici tablosundaki user_id ile eşleştiriyoruz
+        query = """
+            SELECT 
+                k.user_id, k.name, k.surname, k.city, k.birth_date, k.sex, k.biography
+            FROM Follow f
+            JOIN Kullanici k ON f.following_id = k.user_id
+            WHERE f.follower_id = %s
+            ORDER BY f.followed_at DESC
+        """
+        cursor.execute(query, (user_id,))
+        users = cursor.fetchall()
+
+        # Tarih formatı ve boş alan düzeltmeleri (App çökmesin diye)
+        for user in users:
+            if user['birth_date']: user['birth_date'] = str(user['birth_date'])
+            # Bu listede detaylı janra/artist göstermeye gerek yok ama
+            # UserProfile modelimiz hata vermesin diye boş liste ekliyoruz
+            user['genres'] = []
+            user['artists'] = []
+            user['compatibility_score'] = 0 # Bu ekranda skora gerek yok
+
+        return users
+    except mysql.connector.Error as err:
+        print(f"Takip Listesi Hatası: {err}")
+        return []
+    finally:
+        cursor.close()
+        conn.close()

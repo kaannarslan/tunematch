@@ -4,6 +4,7 @@ import '../models/user_profile.dart';
 import '../services/api_service.dart';
 import '../widgets/profile_card.dart';
 import 'login_screen.dart'; // <-- BUNU EKLE
+import 'following_screen.dart'; // <-- IMPORT EKLEMEYİ UNUTMA
 
 class MatchScreen extends StatefulWidget {
   // Giriş yapan kullanıcının ID'sine ihtiyacımız var
@@ -33,19 +34,29 @@ class _MatchScreenState extends State<MatchScreen> {
     int previousIndex,
     int? currentIndex,
     CardSwiperDirection direction,
-    List<UserProfile> users, // Listeyi parametre olarak alıyoruz artık
+    List<UserProfile> users,
   ) {
     final swipedUser = users[previousIndex];
 
     if (direction == CardSwiperDirection.right) {
+      // 1. Kullanıcıya Görsel Geri Bildirim Ver
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
             content: Text('${swipedUser.firstName} beğenildi! 🎵'),
             backgroundColor: Colors.green,
             duration: const Duration(milliseconds: 500)),
       );
-      // BURAYA İLERİDE "BEĞENİ GÖNDER" API İSTEĞİ GELECEK
+
+      // 2. BACKEND'E İSTEK AT (Arka planda çalışır, UI'ı dondurmaz)
+      // widget.currentUserId -> Beğenen (Biz)
+      // int.parse(swipedUser.id) -> Beğenilen (Karttaki)
+      ApiService.followUser(widget.currentUserId, int.parse(swipedUser.id));
+
+      debugPrint(
+          "Takip isteği gönderildi: ${widget.currentUserId} -> ${swipedUser.id}");
     }
+    // Sola kaydırma (Pass) için şimdilik bir şey yapmıyoruz.
+
     return true;
   }
 
@@ -75,6 +86,26 @@ class _MatchScreenState extends State<MatchScreen> {
         title: const Text("Müzik Eşleşmesi",
             style: TextStyle(fontWeight: FontWeight.bold)),
         centerTitle: true,
+        // --- YENİ EKLENEN KISIM: SAĞ ÜST BUTON ---
+        actions: [
+          IconButton(
+            icon:
+                const Icon(Icons.list_alt, color: Colors.deepPurple, size: 28),
+            onPressed: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  // currentUserId'yi parametre olarak geçiriyoruz
+                  builder: (context) =>
+                      FollowingScreen(currentUserId: widget.currentUserId),
+                ),
+              );
+            },
+            tooltip: "Beğendiklerim",
+          ),
+          const SizedBox(width: 8), // Biraz sağdan boşluk
+        ],
+        // -----------------------------------------
       ),
       body: SafeArea(
         child: FutureBuilder<List<UserProfile>>(
