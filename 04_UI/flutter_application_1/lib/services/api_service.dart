@@ -168,7 +168,7 @@ class ApiService {
       final response = await http.get(url);
       if (response.statusCode == 200) {
         final decoded = jsonDecode(response.body);
-        return decoded['data']; // [{song_id: 1, title: 'One', ...}, ...]
+        return decoded['data'];
       }
     } catch (e) {
       print("Song search error: $e");

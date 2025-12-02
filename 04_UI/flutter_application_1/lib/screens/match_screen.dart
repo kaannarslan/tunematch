@@ -1,10 +1,11 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_application_1/screens/player_screen.dart';
 import 'package:flutter_card_swiper/flutter_card_swiper.dart';
 import '../models/user_profile.dart';
 import '../services/api_service.dart';
 import '../widgets/profile_card.dart';
-import 'login_screen.dart'; // <-- BUNU EKLE
-import 'following_screen.dart'; // <-- IMPORT EKLEMEYİ UNUTMA
+import 'login_screen.dart';
+import 'following_screen.dart';
 
 class MatchScreen extends StatefulWidget {
   // Giriş yapan kullanıcının ID'sine ihtiyacımız var
@@ -48,15 +49,11 @@ class _MatchScreenState extends State<MatchScreen> {
       );
 
       // 2. BACKEND'E İSTEK AT (Arka planda çalışır, UI'ı dondurmaz)
-      // widget.currentUserId -> Beğenen (Biz)
-      // int.parse(swipedUser.id) -> Beğenilen (Karttaki)
       ApiService.followUser(widget.currentUserId, int.parse(swipedUser.id));
 
       debugPrint(
           "Takip isteği gönderildi: ${widget.currentUserId} -> ${swipedUser.id}");
     }
-    // Sola kaydırma (Pass) için şimdilik bir şey yapmıyoruz.
-
     return true;
   }
 
@@ -64,59 +61,68 @@ class _MatchScreenState extends State<MatchScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        // --- YENİ EKLENEN KISIM: GERİ DÖN TUŞU ---
+        // GERİ DÖN TUŞU (SOL ÜST)
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back_ios_new,
-              color: Colors.deepPurple), // Geri oku ikonu
+          icon: const Icon(Icons.arrow_back_ios_new, color: Colors.deepPurple),
           onPressed: () {
-            // Çıkış onayı sormak istersen buraya Dialog ekleyebiliriz.
-            // Şimdilik direkt çıkış yapıyoruz:
-
             Navigator.pushAndRemoveUntil(
               context,
               MaterialPageRoute(builder: (context) => const LoginScreen()),
-              (route) =>
-                  false, // Geriye dönük tüm sayfaları sil (Stack'i temizle)
+              (route) => false,
             );
           },
-          tooltip: "Çıkış Yap", // Uzun basınca çıkan yazı
+          tooltip: "Çıkış Yap",
         ),
-        // ------------------------------------------
 
         title: const Text("Müzik Eşleşmesi",
             style: TextStyle(fontWeight: FontWeight.bold)),
         centerTitle: true,
-        // --- YENİ EKLENEN KISIM: SAĞ ÜST BUTON ---
         actions: [
           IconButton(
-            icon:
-                const Icon(Icons.list_alt, color: Colors.deepPurple, size: 28),
+            icon: const Icon(Icons.search, color: Colors.deepPurple),
+            tooltip: "Şarkı Keşfet",
             onPressed: () {
               Navigator.push(
                 context,
                 MaterialPageRoute(
-                  // currentUserId'yi parametre olarak geçiriyoruz
-                  builder: (context) =>
-                      FollowingScreen(currentUserId: widget.currentUserId),
+                  builder: (context) => PlayerScreen(currentUserId: widget.currentUserId),
                 ),
               );
             },
-            tooltip: "Beğendiklerim",
           ),
-          const SizedBox(width: 8), // Biraz sağdan boşluk
+
+          IconButton(
+            icon: const Icon(Icons.list_alt, color: Colors.deepPurple, size: 28),
+            tooltip: "Beğendiklerim",
+            onPressed: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => FollowingScreen(currentUserId: widget.currentUserId),
+                ),
+              );
+            },
+          ),
+
+          IconButton(
+            icon: const Icon(Icons.person, color: Colors.deepPurple),
+            tooltip: "Profilim",
+            onPressed: () {
+               // Buraya ProfileScreen gelecek
+            },
+          ),
+
+          const SizedBox(width: 8),
         ],
-        // -----------------------------------------
       ),
       body: SafeArea(
         child: FutureBuilder<List<UserProfile>>(
-          future: _matchesFuture, // Takip edilecek işlem
+          future: _matchesFuture,
           builder: (context, snapshot) {
-            // 1. DURUM: Veri Yükleniyor
             if (snapshot.connectionState == ConnectionState.waiting) {
               return const Center(child: CircularProgressIndicator());
             }
 
-            // 2. DURUM: Hata Çıktı
             if (snapshot.hasError) {
               return Center(child: Text("Hata oluştu: ${snapshot.error}"));
             }
@@ -143,11 +149,8 @@ class _MatchScreenState extends State<MatchScreen> {
                     onSwipe: (prev, curr, dir) =>
                         _onSwipe(prev, curr, dir, users),
 
-                    // --- HATAYI ÇÖZEN KISIM ---
-                    // Eğer kullanıcı sayısı 3'ten azsa, kullanıcı sayısı kadar göster.
-                    // Eğer 3 veya fazlaysa, 3 tane göster.
+                    // Eğer kullanıcı sayısı 3'ten azsa hata vermemesi için kontrol
                     numberOfCardsDisplayed: users.length < 3 ? users.length : 3,
-                    // ---------------------------
 
                     backCardOffset: const Offset(0, 40),
                     padding: const EdgeInsets.all(24.0),
@@ -156,7 +159,7 @@ class _MatchScreenState extends State<MatchScreen> {
                     },
                   ),
                 ),
-                // Butonlar
+                // Butonlar (Alt Kısım)
                 Padding(
                   padding: const EdgeInsets.symmetric(vertical: 20.0),
                   child: Row(

@@ -180,7 +180,7 @@ def search_song():
     keyword = request.args.get('q')
     if not keyword:
         return jsonify({"status": "error", "data": []}), 400
-    results = db.search_song(keyword)
+    results = db.search_songs(keyword)
     return jsonify({"status": "success", "data": results}), 200
 # ==========================================
 # SUNUCUYU BAŞLAT
