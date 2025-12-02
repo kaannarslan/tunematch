@@ -1,6 +1,6 @@
 from flask import Flask, request, jsonify
 import db_manager as db
-
+from werkzeug.security import generate_password_hash, check_password_hash
 app = Flask(__name__)
 
 
@@ -12,13 +12,15 @@ app = Flask(__name__)
 def register():
     data = request.json
 
+    hashed_password = generate_password_hash(data.get('password'))
+
     new_user_id, error_message = db.add_user(
         name=data.get('name'),
         surname=data.get('surname'),
         email=data.get('email'),
-        password_hash=data.get('password'),
+        password_hash=hashed_password,
         birth_date=data.get('birth_date'),  # 'YYYY-MM-DD'
-        sex=data.get('F'),
+        sex=data.get('sex'),
         city=data.get('city'),
     )
 
@@ -45,7 +47,7 @@ def login():
 
     user = db.get_user_by_email(email)
 
-    if user and user['password_hash'] == password:
+    if user and check_password_hash(user['password_hash'], password):
         return jsonify({
             "status": "success",
             "user_id": user['user_id'],
