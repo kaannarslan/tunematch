@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../services/api_service.dart';
 import 'match_screen.dart';
+import 'login_screen.dart';
 
 class RegisterScreen extends StatefulWidget {
   const RegisterScreen({super.key});
@@ -159,13 +160,21 @@ class _RegisterScreenState extends State<RegisterScreen> {
       setState(() => _isLoading = false);
 
       if (result['success']) {
-        ScaffoldMessenger.of(context)
-            .showSnackBar(const SnackBar(content: Text("Kayıt Başarılı!")));
+        //Information message
+        ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+                content: Text("Kayıt Başarılı! Lütfen giriş yapınız."),
+                backgroundColor: Colors.green,
+            )
+        );
+
+        //Automatically log-in screen
         Navigator.pushAndRemoveUntil(
             context,
-            MaterialPageRoute(builder: (context) => const MatchScreen()),
-            (route) => false);
-      } else {
+            MaterialPageRoute(builder: (context) => const LoginScreen()),
+            (route) => false
+        );
+      }else {
         ScaffoldMessenger.of(context).showSnackBar(SnackBar(
             content: Text(result['message']), backgroundColor: Colors.red));
       }
