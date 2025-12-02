@@ -206,11 +206,30 @@ class ApiService {
     } catch (e) {
       print("Stats error: $e");
     }
-    // Hata olursa boş veri dönelim
+
     return {
       "total_songs": 0,
       "top_artist": "-",
       "top_genre": "-"
     };
+  }
+  // UPDATE FAVORITES
+  static Future<bool> updateFavorites(int userId, List<String> genres, List<String> artists) async {
+    final url = Uri.parse('$baseUrl/user/update_favorites');
+    try {
+      final response = await http.post(
+        url,
+        headers: {"Content-Type": "application/json"},
+        body: jsonEncode({
+          "user_id": userId,
+          "genres": genres,
+          "artists": artists
+        }),
+      );
+      return response.statusCode == 200;
+    } catch (e) {
+      print("Update fav error: $e");
+      return false;
+    }
   }
 }

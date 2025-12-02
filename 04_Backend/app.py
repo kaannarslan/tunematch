@@ -192,6 +192,22 @@ def get_user_stats(user_id):
     else:
         return jsonify({"status": "error", "message": "Veri alınamadı"}), 500
 
+
+@app.route('/api/user/update_favorites', methods=['POST'])
+def update_favorites():
+    data = request.json
+    user_id = data.get('user_id')
+    genres = data.get('genres', [])
+    artists = data.get('artists', [])
+
+    if not user_id:
+        return jsonify({"status": "error", "message": "User ID gerekli"}), 400
+
+    if db.update_user_favorites(user_id, genres, artists):
+        return jsonify({"status": "success", "message": "Favoriler güncellendi"}), 200
+    else:
+        return jsonify({"status": "error", "message": "Güncelleme başarısız"}), 500
+
 # ==========================================
 # SUNUCUYU BAŞLAT
 # ==========================================

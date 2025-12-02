@@ -549,3 +549,34 @@ def get_user_statistics(user_id):
     finally:
         cursor.close()
         conn.close()
+
+# EDIT PROFILE
+def update_user_favorites(user_id, fav_genres, fav_artists):
+    conn = get_db_connection()
+    if not conn: return False
+    cursor = conn.cursor()
+    try:
+        cursor.execute("DELETE FROM User_Liked_Genre WHERE user_id = %s", (user_id,))
+        cursor.execute("DELETE FROM User_Favorite_Artist WHERE user_id = %s", (user_id,))
+        for genre_name in fav_genres:
+            genre_id = get_id_by_name("Genre", genre_name)
+            if genre_id:
+                cursor.execute("INSERT IGNORE INTO User_Liked_Genre (user_id, genre_id, preference) VALUES (%s, %s, 10)",
+                               (user_id, genre_id))
+
+        for artist_name in fav_artists:
+            artist_id = get_id_by_name("Artist", artist_name)
+            if artist_id:
+                cursor.execute("INSERT IGNORE INTO User_Favorite_Artist (user_id, artist_id, level) VALUES (%s, %s, 10)",
+                               (user_id, artist_id))
+
+        conn.commit()
+        return True
+
+    except Exception as e:
+        print(f"Update Favorites Error: {e}")
+        conn.rollback()
+        return False
+    finally:
+        cursor.close()
+        conn.close()

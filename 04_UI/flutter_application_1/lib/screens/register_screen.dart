@@ -51,31 +51,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
       });
     }
   }
-  // // Veri Havuzları
-  // final List<String> _allGenres = [
-  //   'Rock',
-  //   'Pop',
-  //   'Jazz',
-  //   'Hip Hop',
-  //   'Techno',
-  //   'Klasik',
-  //   'Indie',
-  //   'Metal',
-  //   'R&B',
-  //   'Arabesk'
-  // ];
-  // final List<String> _allArtists = [
-  //   'The Weeknd',
-  //   'Arctic Monkeys',
-  //   'Sezen Aksu',
-  //   'Müslüm Gürses',
-  //   'Taylor Swift',
-  //   'Duman',
-  //   'Ezhel',
-  //   'Metallica'
-  // ];
-
-  // --- TARİH SEÇİCİ---
+  //DATE
   Future<void> _selectDate(BuildContext context) async {
     final DateTime? picked = await showDialog(
       context: context,

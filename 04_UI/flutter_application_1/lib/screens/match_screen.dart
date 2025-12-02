@@ -28,8 +28,13 @@ class _MatchScreenState extends State<MatchScreen> {
   @override
   void initState() {
     super.initState();
-    // Ekran açılır açılmaz veriyi çekmeye başla
-    _matchesFuture = ApiService.getMatches(widget.currentUserId);
+    _loadMatches(); // Fonksiyonu çağır
+  }
+
+  void _loadMatches() {
+    setState(() {
+      _matchesFuture = ApiService.getMatches(widget.currentUserId);
+    });
   }
 
   bool _onSwipe(
@@ -115,7 +120,10 @@ class _MatchScreenState extends State<MatchScreen> {
                 MaterialPageRoute(
                   builder: (context) => ProfileScreen(currentUserId: widget.currentUserId),
                 ),
-              );
+              ).then((_) {
+                print("Profil'den dönüldü, eşleşmeler yenileniyor...");
+                _loadMatches();
+              });
             },
           ),
 

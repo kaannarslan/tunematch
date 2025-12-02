@@ -11,25 +11,94 @@ class ProfileScreen extends StatefulWidget {
 }
 
 class _ProfileScreenState extends State<ProfileScreen> {
+  List<String> _allGenres = [];
+  List<String> _allArtists = [];
   Map<String, dynamic>? stats;
   bool isLoading = true;
 
   @override
   void initState() {
     super.initState();
-    _loadStats();
+    _loadData();
   }
 
-  void _loadStats() async {
-    final data = await ApiService.getUserStats(widget.currentUserId);
+  void _loadData() async {
+    final results = await Future.wait([
+      ApiService.getUserStats(widget.currentUserId),
+      ApiService.getGenres(),
+      ApiService.getArtists(),
+    ]);
+
     if (mounted) {
       setState(() {
-        stats = data;
+        stats = results[0] as Map<String, dynamic>;
+        _allGenres = results[1] as List<String>;
+        _allArtists = results[2] as List<String>;
         isLoading = false;
       });
     }
   }
+void _showMultiSelectDialog(String title, List<String> allItems, List<String> currentSelected, Function(List<String>) onConfirm) async {
+    final List<String> tempSelected = List.from(currentSelected);
+    await showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return StatefulBuilder(
+          builder: (context, setState) {
+            return AlertDialog(
+              title: Text("$title Düzenle"),
+              content: SizedBox(
+                width: double.maxFinite,
+                child: ListView.builder(
+                  shrinkWrap: true,
+                  itemCount: allItems.length,
+                  itemBuilder: (context, index) {
+                    final item = allItems[index];
+                    final isSelected = tempSelected.contains(item);
+                    return CheckboxListTile(
+                      title: Text(item),
+                      value: isSelected,
+                      activeColor: Colors.deepPurple,
+                      onChanged: (bool? value) {
+                        setState(() {
+                          if (value == true) tempSelected.add(item);
+                          else tempSelected.remove(item);
+                        });
+                      },
+                    );
+                  },
+                ),
+              ),
+              actions: [
+                TextButton(child: const Text("İptal"), onPressed: () => Navigator.pop(context)),
+                ElevatedButton(
+                    child: const Text("Kaydet"),
+                    onPressed: () {
+                      onConfirm(tempSelected);
+                      Navigator.pop(context);
+                    }),
+              ],
+            );
+          },
+        );
+      },
+    );
+  }
+  void _saveChanges() async {
+    if (stats == null) return;
+    List<String> currentGenres = List<String>.from(stats!['registered_fav_genres']);
+    List<String> currentArtists = List<String>.from(stats!['registered_fav_artists']);
 
+    bool success = await ApiService.updateFavorites(
+        widget.currentUserId, currentGenres, currentArtists);
+
+    if (mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(success ? "Profil güncellendi!" : "Hata oluştu"),
+                 backgroundColor: success ? Colors.green : Colors.red)
+      );
+    }
+  }
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -151,9 +220,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   ),
                   const SizedBox(height: 16),
 
-                  _buildChipSection("Sanatçılar", stats?['registered_fav_artists'] ?? [], Icons.mic),
+                  _buildChipSection("Sanatçılar", stats?['registered_fav_artists'] ?? [], _allArtists, Icons.mic, 'artist'),
                   const SizedBox(height: 16),
-                  _buildChipSection("Türler", stats?['registered_fav_genres'] ?? [], Icons.category),
+                  _buildChipSection("Türler", stats?['registered_fav_genres'] ?? [], _allGenres, Icons.category, 'genre'),
                 ],
               ),
             ),
@@ -216,7 +285,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
     );
   }
 
-  Widget _buildChipSection(String title, List<dynamic> items, IconData icon) {
+  Widget _buildChipSection(String title, List<dynamic> items, List<String> allOptions, IconData icon, String type) {
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.all(16),
@@ -229,15 +298,41 @@ class _ProfileScreenState extends State<ProfileScreen> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Icon(icon, size: 20, color: Colors.deepPurple),
-              const SizedBox(width: 8),
-              Text(title, style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600)),
+              Row(
+                children: [
+                  Icon(icon, size: 20, color: Colors.deepPurple),
+                  const SizedBox(width: 8),
+                  Text(title, style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600)),
+                ],
+              ),
+              // DÜZENLE BUTONU
+              IconButton(
+                icon: const Icon(Icons.edit, size: 20, color: Colors.grey),
+                onPressed: () {
+                  // Şu anki seçili olanları String listesine çevir
+                  List<String> currentList = List<String>.from(items);
+
+                  _showMultiSelectDialog(title, allOptions, currentList, (newList) {
+                    setState(() {
+                      // Ekranı güncelle
+                      if (type == 'genre') {
+                        stats!['registered_fav_genres'] = newList;
+                      } else {
+                        stats!['registered_fav_artists'] = newList;
+                      }
+                    });
+                    // Backend'e kaydet
+                    _saveChanges();
+                  });
+                },
+              )
             ],
           ),
           const SizedBox(height: 12),
           items.isEmpty
-              ? const Text("Henüz seçim yapılmamış", style: TextStyle(color: Colors.grey))
+              ? const Text("Seçim yok", style: TextStyle(color: Colors.grey))
               : Wrap(
                   spacing: 8,
                   runSpacing: 8,
