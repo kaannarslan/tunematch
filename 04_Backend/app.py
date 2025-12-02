@@ -182,6 +182,16 @@ def search_song():
         return jsonify({"status": "error", "data": []}), 400
     results = db.search_songs(keyword)
     return jsonify({"status": "success", "data": results}), 200
+
+@app.route('/api/user/stats/<int:user_id>', methods=['GET'])
+def get_user_stats(user_id):
+    """Kullanıcının istatistiklerini getirir."""
+    stats = db.get_user_statistics(user_id)
+    if stats:
+        return jsonify({"status": "success", "data": stats}), 200
+    else:
+        return jsonify({"status": "error", "message": "Veri alınamadı"}), 500
+
 # ==========================================
 # SUNUCUYU BAŞLAT
 # ==========================================

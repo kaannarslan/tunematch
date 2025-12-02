@@ -161,13 +161,18 @@ class _RegisterScreenState extends State<RegisterScreen> {
 
       setState(() => _isLoading = true);
 
+      String? genderCode;
+      if (_selectedGender == 'Erkek') genderCode = 'M';
+      else if (_selectedGender == 'Kadın') genderCode = 'F';
+      else genderCode = 'Other';
+
       final userData = {
         "name": _firstNameController.text,
         "surname": _lastNameController.text,
         "email": _emailController.text,
         "password": _passwordController.text,
         "birth_date": _birthDateController.text,
-        "sex": _selectedGender,
+        "sex": genderCode,
         "city": _cityController.text,
         "genres": _selectedGenres,
         "artists": _selectedArtists,

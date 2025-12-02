@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_application_1/screens/player_screen.dart';
+import 'package:flutter_application_1/screens/profile_screen.dart';
 import 'package:flutter_card_swiper/flutter_card_swiper.dart';
 import '../models/user_profile.dart';
 import '../services/api_service.dart';
@@ -104,11 +105,17 @@ class _MatchScreenState extends State<MatchScreen> {
             },
           ),
 
+          // profile button
           IconButton(
             icon: const Icon(Icons.person, color: Colors.deepPurple),
             tooltip: "Profilim",
             onPressed: () {
-               // Buraya ProfileScreen gelecek
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => ProfileScreen(currentUserId: widget.currentUserId),
+                ),
+              );
             },
           ),
 

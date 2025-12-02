@@ -194,5 +194,23 @@ class ApiService {
       return false;
     }
   }
-
+// --- İSTATİSTİKLERİ GETİR ---
+  static Future<Map<String, dynamic>> getUserStats(int userId) async {
+    final url = Uri.parse('$baseUrl/user/stats/$userId');
+    try {
+      final response = await http.get(url);
+      if (response.statusCode == 200) {
+        final decoded = jsonDecode(response.body);
+        return decoded['data'];
+      }
+    } catch (e) {
+      print("Stats error: $e");
+    }
+    // Hata olursa boş veri dönelim
+    return {
+      "total_songs": 0,
+      "top_artist": "-",
+      "top_genre": "-"
+    };
+  }
 }

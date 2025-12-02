@@ -1,6 +1,7 @@
 import mysql.connector
 import os
 from dotenv import load_dotenv
+from datetime import date
 
 load_dotenv()
 
@@ -227,7 +228,6 @@ def add_favorite_artist(user_id, artist_id, level = 10):
         conn.close()
 
 
-# --- BU YARDIMCI FONKSİYONLARI DOSYANIN EN ALTINA EKLE ---
 
 def get_user_genres(user_id):
     conn = get_db_connection()
@@ -263,7 +263,6 @@ def get_user_artists(user_id):
     conn.close()
     return [r[0] for r in results]
 
-# --- MEVCUT get_matches_for_user FONKSİYONUNU GÜNCELLE ---
 
 def get_matches_for_user(current_user_id):
     conn = get_db_connection()
@@ -464,6 +463,89 @@ def get_top_artists(limit = 20):
     except Exception as e:
         print(f"Artists List Error: {e}")
         return []
+    finally:
+        cursor.close()
+        conn.close()
+
+# STATISTICS FOR PROFILE SCREEN
+def get_user_statistics(user_id):
+    conn = get_db_connection()
+    if not conn: return None
+    cursor = conn.cursor(dictionary=True)
+
+    stats = {
+        "total_songs": 0,
+        "most_listened_artist": "Henüz Yok",
+        "most_listened_genre": "Henüz Yok",
+        "registered_fav_genres": [],  #Came from register screen
+        "registered_fav_artists": [],  #Came from register screen
+        "active_days": 1,
+        "city": "Bilinmiyor",
+        "sex": "-",
+        "age": 18,
+        "name": "",
+        "surname": ""
+    }
+
+    try:
+        cursor.execute("SELECT name, surname, city, sex, birth_date FROM Kullanici WHERE user_id = %s", (user_id,))
+        user_info = cursor.fetchone()
+
+        if user_info:
+            stats["name"] = user_info['name']
+            stats["surname"] = user_info['surname']
+            stats["city"] = user_info['city']
+
+            sex_map = {'M': 'Erkek', 'F': 'Kadın', 'Other': 'Diğer'}
+            stats["sex"] = sex_map.get(user_info['sex'], user_info['sex'])
+
+            if user_info['birth_date']:
+                today = date.today()
+                born = user_info['birth_date']
+                stats["age"] = today.year - born.year - ((today.month, today.day) < (born.month, born.day))
+        # 1. DİNLEME GEÇMİŞİ ANALİZİ (Listening history)
+        cursor.execute("SELECT SUM(play_count) as total FROM Listening_History WHERE user_id = %s", (user_id,))
+        res = cursor.fetchone()
+        if res and res['total']:
+            stats["total_songs"] = int(res['total'])
+
+        # Most listened artists
+        cursor.execute("""
+            SELECT a.name 
+            FROM Listening_History lh
+            JOIN Song s ON lh.song_id = s.song_id
+            JOIN Artist a ON s.artist_id = a.artist_id
+            WHERE lh.user_id = %s
+            GROUP BY a.artist_id, a.name
+            ORDER BY SUM(lh.play_count) DESC
+            LIMIT 1
+        """, (user_id,))
+        res = cursor.fetchone()
+        if res: stats["most_listened_artist"] = res['name']
+
+        # most listened genres
+        cursor.execute("""
+            SELECT g.name 
+            FROM Listening_History lh
+            JOIN Song s ON lh.song_id = s.song_id
+            JOIN Artist_Genre ag ON s.artist_id = ag.artist_id
+            JOIN Genre g ON ag.genre_id = g.genre_id
+            WHERE lh.user_id = %s
+            GROUP BY g.genre_id, g.name
+            ORDER BY COUNT(*) DESC
+            LIMIT 1
+        """, (user_id,))
+        res = cursor.fetchone()
+        if res: stats["most_listened_genre"] = res['name']
+
+        stats["registered_fav_genres"] = get_user_genres(user_id)
+        stats["registered_fav_artists"] = get_user_artists(user_id)
+
+        return stats
+
+    except Exception as e:
+        print(f"Stats Error: {e}")
+        return stats
     finally:
         cursor.close()
         conn.close()
