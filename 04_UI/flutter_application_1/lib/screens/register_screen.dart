@@ -15,8 +15,8 @@ class _RegisterScreenState extends State<RegisterScreen> {
   // Controllerlar
   final _firstNameController = TextEditingController();
   final _lastNameController = TextEditingController();
-  final _emailController = TextEditingController(); // Eklendi
-  final _passwordController = TextEditingController(); // Eklendi
+  final _emailController = TextEditingController();
+  final _passwordController = TextEditingController();
   final _birthDateController = TextEditingController();
   final _cityController = TextEditingController();
 
@@ -27,31 +27,55 @@ class _RegisterScreenState extends State<RegisterScreen> {
   List<String> _selectedArtists = [];
   bool _isLoading = false;
 
-  // Veri Havuzları
-  final List<String> _allGenres = [
-    'Rock',
-    'Pop',
-    'Jazz',
-    'Hip Hop',
-    'Techno',
-    'Klasik',
-    'Indie',
-    'Metal',
-    'R&B',
-    'Arabesk'
-  ];
-  final List<String> _allArtists = [
-    'The Weeknd',
-    'Arctic Monkeys',
-    'Sezen Aksu',
-    'Müslüm Gürses',
-    'Taylor Swift',
-    'Duman',
-    'Ezhel',
-    'Metallica'
-  ];
+  List<String> _allGenres = [];
+  List<String> _topArtists = [];
+  bool _isDataLoading = true;
 
-  // --- TARİH SEÇİCİ (Manuel Formatlama ile) ---
+  @override
+  void initState() {
+    super.initState();
+    _loadDatabaseData();
+  }
+
+  void _loadDatabaseData() async {
+    final results = await Future.wait([
+      ApiService.getGenres(),
+      ApiService.getArtists(),
+    ]);
+
+    if (mounted) {
+      setState(() {
+        _allGenres = results[0];
+        _topArtists = results[1];
+        _isDataLoading = false;
+      });
+    }
+  }
+  // // Veri Havuzları
+  // final List<String> _allGenres = [
+  //   'Rock',
+  //   'Pop',
+  //   'Jazz',
+  //   'Hip Hop',
+  //   'Techno',
+  //   'Klasik',
+  //   'Indie',
+  //   'Metal',
+  //   'R&B',
+  //   'Arabesk'
+  // ];
+  // final List<String> _allArtists = [
+  //   'The Weeknd',
+  //   'Arctic Monkeys',
+  //   'Sezen Aksu',
+  //   'Müslüm Gürses',
+  //   'Taylor Swift',
+  //   'Duman',
+  //   'Ezhel',
+  //   'Metallica'
+  // ];
+
+  // --- TARİH SEÇİCİ---
   Future<void> _selectDate(BuildContext context) async {
     final DateTime? picked = await showDialog(
       context: context,
@@ -65,7 +89,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
     );
 
     if (picked != null) {
-      // YYYY-MM-DD Formatı (intl paketi olmadan)
+      // YYYY-MM-DD Formatı
       String formattedDate =
           "${picked.year}-${picked.month.toString().padLeft(2, '0')}-${picked.day.toString().padLeft(2, '0')}";
       setState(() {
@@ -137,8 +161,6 @@ class _RegisterScreenState extends State<RegisterScreen> {
 
       setState(() => _isLoading = true);
 
-      // register_screen.dart içinde _register fonksiyonu:
-
       final userData = {
         "name": _firstNameController.text,
         "surname": _lastNameController.text,
@@ -147,9 +169,8 @@ class _RegisterScreenState extends State<RegisterScreen> {
         "birth_date": _birthDateController.text,
         "sex": _selectedGender,
         "city": _cityController.text,
-        // --- YENİ EKLENEN KISIM ---
-        "genres": _selectedGenres, // Örn: ["Rock", "Jazz"]
-        "artists": _selectedArtists, // Örn: ["Tarkan", "Metallica"]
+        "genres": _selectedGenres,
+        "artists": _selectedArtists,
       };
 
       final result = await ApiService.register(userData);
@@ -276,8 +297,10 @@ class _RegisterScreenState extends State<RegisterScreen> {
                         TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
                 const SizedBox(height: 12),
 
-                // TÜR SEÇİMİ
-                InkWell(
+                //TÜR SEÇİMİ
+                _isDataLoading
+                    ? const Center(child: CircularProgressIndicator())
+                : InkWell(
                   onTap: () => _showMultiSelectDialog(
                       "Müzik Türü",
                       _allGenres,
@@ -309,7 +332,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                 InkWell(
                   onTap: () => _showMultiSelectDialog(
                       "Sanatçı",
-                      _allArtists,
+                      _topArtists,
                       _selectedArtists,
                       (list) => setState(() => _selectedArtists = list)),
                   child: Container(

@@ -39,7 +39,7 @@ def add_user(name, surname, email, password_hash, birth_date, sex, city):
         """
         cursor.execute(query, (name, surname, email, password_hash, birth_date, sex, city))
         conn.commit()
-        
+
         new_user_id = cursor.lastrowid
         return new_user_id, None # Başarılı: (ID, HataYok)
 
@@ -59,13 +59,13 @@ def get_id_by_name(table_name, name_value):
     conn = get_db_connection()
     if not conn: return None
     cursor = conn.cursor() # Varsayılan Tuple cursor
-    
+
     try:
         # SQL Injection riskine karşı tablo adını format ile, değeri parametre ile veriyoruz
         query = f"SELECT * FROM {table_name} WHERE name = %s"
         cursor.execute(query, (name_value,))
         result = cursor.fetchone()
-        
+
         # Result örneği: (1, 'Rock') -> Tuple
         if result:
             return result[0] # İlk sütun her zaman ID varsayıyoruz
@@ -87,12 +87,12 @@ def add_user_genres(user_id, genre_names):
         for genre_name in genre_names:
             # Genre tablosundan ID bul
             genre_id = get_id_by_name("Genre", genre_name)
-            
+
             if genre_id:
                 #IGNORE: Zaten ekliyse hata verme, geç
                 query = "INSERT IGNORE INTO User_Liked_Genre (user_id, genre_id) VALUES (%s, %s)"
                 cursor.execute(query, (user_id, genre_id))
-        
+
         conn.commit()
         print(f"User {user_id} için türler eklendi.")
     except Exception as e:
@@ -111,11 +111,11 @@ def add_user_artists(user_id, artist_names):
         for artist_name in artist_names:
             # Artist tablosundan ID bul
             artist_id = get_id_by_name("Artist", artist_name)
-            
+
             if artist_id:
                 query = "INSERT INTO User_Favorite_Artist (user_id, artist_id, level) VALUES (%s, %s, 10) ON DUPLICATE KEY UPDATE level=10"
                 cursor.execute(query, (user_id, artist_id))
-        
+
         conn.commit()
         print(f"User {user_id} için sanatçılar eklendi.")
     except Exception as e:
@@ -177,6 +177,31 @@ def search_artist(keyword):
     cursor.close()
     conn.close()
     return results
+
+def search_songs(keyword):
+    conn = get_db_connection()
+    if not conn: return []
+    cursor = conn.cursor(dictionary=True)
+
+    try:
+        search_term = f"%{keyword}%"
+        query = """
+                SELECT s.song_id, s.title, a.name as artist_name, al.cover_url
+                FROM Song s
+                JOIN Artist a ON s.artist_id = a.artist_id
+                LEFT JOIN Album al ON s.album_id = al.album_id
+                WHERE s.title LIKE %s
+                ORDER BY s.title ASC
+                LIMIT 20
+            """
+        cursor.execute(query, (search_term,))
+        return cursor.fetchall()
+    except Exception as e:
+        print(f"Song Search Error: {e}")
+        return []
+    finally:
+        cursor.close()
+        conn.close()
 
 
 def add_favorite_artist(user_id, artist_id, level = 10):
@@ -285,7 +310,7 @@ def get_matches_for_user(current_user_id):
 
             GROUP BY 
                 other_user.user_id, other_user.name, other_user.surname, 
-                other_user.city, other_user.birth_date, other_user.sex, other_user.biography
+                other_user.city, other_user.birth_date, other_user.sex, other_user.biography, other_user.profile_photo
             
             -- FİLTRE GERİ GELDİ: Sadece puanı 0'dan büyük olanları getir
             HAVING compatibility_score > 0
@@ -293,7 +318,7 @@ def get_matches_for_user(current_user_id):
             ORDER BY compatibility_score DESC
             LIMIT 20;
         """
-        
+
         cursor.execute(query, (current_user_id, current_user_id, current_user_id))
         matches = cursor.fetchall()
 
@@ -301,7 +326,7 @@ def get_matches_for_user(current_user_id):
         for user in matches:
             # Tarih formatı düzeltme
             if user['birth_date']: user['birth_date'] = str(user['birth_date'])
-            
+
             # Profil fotosu boşsa hata vermesin
             if 'profile_photo' not in user or not user['profile_photo']:
                  user['profile_photo'] = ""
@@ -342,7 +367,7 @@ def log_song_listen(user_id, song_id):
     finally:
         cursor.close()
         conn.close()
-        
+
 def add_follow(follower_id, following_id):
     """Kullanıcının birini beğendiğini kaydeder."""
     conn = get_db_connection()
@@ -398,6 +423,46 @@ def get_followed_users(user_id):
         return users
     except mysql.connector.Error as err:
         print(f"Takip Listesi Hatası: {err}")
+        return []
+    finally:
+        cursor.close()
+        conn.close()
+
+# SAVE FROM HARDCODING
+
+def get_all_genres():
+    conn = get_db_connection()
+    if not conn: return []
+    cursor = conn.cursor()
+    try:
+        cursor.execute("""
+                        SELECT name
+                        FROM Genre
+                        ORDER BY name ASC
+                        """)
+        return [row[0] for row in cursor.fetchall()]
+    except Exception as e:
+        print(f"Genre List Error: {e}")
+        return []
+    finally:
+        cursor.close()
+        conn.close()
+
+def get_top_artists(limit = 20):
+    conn = get_db_connection()
+    if not conn: return []
+    cursor = conn.cursor()
+    try:
+        query = """
+                        SELECT name
+                        FROM Artist
+                        ORDER BY popularity_score DESC
+                        LIMIT %s
+                        """
+        cursor.execute(query, (limit,))
+        return [row[0] for row in cursor.fetchall()]
+    except Exception as e:
+        print(f"Artists List Error: {e}")
         return []
     finally:
         cursor.close()

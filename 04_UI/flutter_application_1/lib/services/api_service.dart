@@ -4,7 +4,7 @@ import '../models/user_profile.dart'; // Modeli import etmeyi unutma
 
 class ApiService {
   // Senin verdiğin IP ve 8000 Portu
-  static const String baseUrl = 'http://10.3.142.209:8000/api';
+  static const String baseUrl = 'http://10.0.2.2:8000/api';
 
   // 1. KAYIT OLMA
   static Future<Map<String, dynamic>> register(
@@ -132,4 +132,67 @@ class ApiService {
       return [];
     }
   }
+
+  // PULL LISTS
+  static Future<List<String>> getGenres() async {
+    final url = Uri.parse('$baseUrl/genres');
+    try {
+      final response = await http.get(url);
+      if (response.statusCode == 200) {
+        final decoded = jsonDecode(response.body);
+        return List<String>.from(decoded['data']);
+      }
+    } catch (e) {
+      print("Genre çekme hatası: $e");
+    }
+    return [];
+  }
+
+  static Future<List<String>> getArtists() async {
+    final url = Uri.parse('$baseUrl/artists');
+    try {
+      final response = await http.get(url);
+      if (response.statusCode == 200) {
+        final decoded = jsonDecode(response.body);
+        return List<String>.from(decoded['data']);
+      }
+    } catch (e) {
+      print("Artist çekme hatası: $e");
+    }
+    return [];
+  }
+  // Search songs
+  static Future<List<dynamic>> searchSongs(String keyword) async {
+    final url = Uri.parse('$baseUrl/search/song?q=$keyword');
+    try {
+      final response = await http.get(url);
+      if (response.statusCode == 200) {
+        final decoded = jsonDecode(response.body);
+        return decoded['data']; // [{song_id: 1, title: 'One', ...}, ...]
+      }
+    } catch (e) {
+      print("Song search error: $e");
+    }
+    return [];
+  }
+
+  //Fake play button
+  static Future<bool> listenToSong(int userId, int songId) async {
+    final url = Uri.parse('$baseUrl/listen');
+    try {
+      final response = await http.post(
+        url,
+        headers: {"Content-Type": "application/json"},
+        body: jsonEncode({
+          "user_id": userId,
+          "song_id": songId
+        }),
+      );
+      return response.statusCode == 200;
+    } catch (e) {
+      print("Listen error: $e");
+      return false;
+    }
+  }
+
 }

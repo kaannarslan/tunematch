@@ -8,23 +8,18 @@ app = Flask(__name__)
 # 1. KULLANICI İŞLEMLERİ (AUTH & PROFILE)
 # ==========================================
 
-# app.py içindeki register fonksiyonu:
-
-# app.py içindeki register fonksiyonunu bununla değiştir:
-
 @app.route('/api/register', methods=['POST'])
 def register():
     data = request.json
-    
-    # 1. db_manager artık iki değer döndürüyor: ID ve Hata Mesajı
+
     new_user_id, error_message = db.add_user(
         name=data.get('name'),
         surname=data.get('surname'),
         email=data.get('email'),
         password_hash=data.get('password'),
-        birth_date=data.get('birth_date'),
+        birth_date=data.get('birth_date'),  # 'YYYY-MM-DD'
         sex=data.get('F'),
-        city=data.get('city')
+        city=data.get('city'),
     )
 
     if new_user_id:
@@ -158,8 +153,7 @@ def follow_user():
         return jsonify({"status": "success", "message": "Takip edildi"}), 200
     else:
         return jsonify({"status": "error", "message": "İşlem başarısız"}), 500
-    
-# app.py dosyasına ekle:
+
 
 @app.route('/api/following/<int:user_id>', methods=['GET'])
 def get_following_list(user_id):
@@ -167,8 +161,27 @@ def get_following_list(user_id):
     users = db.get_followed_users(user_id)
     # Her zaman success dönüyoruz, liste boş olsa bile
     return jsonify({"status": "success", "data": users}), 200
+# ==========================================
+# LİSTELER
+# ==========================================
+@app.route('/api/genres', methods=['GET'])
+def get_all_genres():
+    genres = db.get_all_genres()
+    return jsonify({"status": "success", "data": genres}), 200
 
+@app.route('/api/artists', methods=['GET'])
+def get_top_artists():
+    limit = request.args.get('limit', default = 50, type=int)
+    artists = db.get_top_artists(limit)
+    return jsonify({"status": "success", "data": artists}), 200
 
+@app.route('/api/search/song', methods=['GET'])
+def search_song():
+    keyword = request.args.get('q')
+    if not keyword:
+        return jsonify({"status": "error", "data": []}), 400
+    results = db.search_song(keyword)
+    return jsonify({"status": "success", "data": results}), 200
 # ==========================================
 # SUNUCUYU BAŞLAT
 # ==========================================

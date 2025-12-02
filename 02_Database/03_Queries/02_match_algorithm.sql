@@ -7,6 +7,10 @@
 		other_user.user_id,
 		other_user.name,
 		other_user.surname,
+		other_user.birth_date,
+		other_user.sex,
+		other_user.city,
+		other_user.biography,
 		((count(distinct common_artists.artist_id)*10)+(count(distinct common_genres.genre_id)*3)) as compatibility_score
 
 	from Kullanici as other_user
